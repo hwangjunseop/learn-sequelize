@@ -1,32 +1,63 @@
-// Sequelize 패키지 -> Sequelize 객체를 색성하고 PostgreSQL과의 연결을 관리
-const Sequelize = require('sequelize');
-const User = require('./user'); // User 모델
-const Comment = require('./comment'); // Comment 모델
+const Sequelize = require('sequelize'); // Sequelize 패키지
 
-// 환경 변수에서 현재 환경을 가져오거나 기본값으로 'development'를 사용
-const env = process.env.NODE_ENV || 'development';
+// User 클래스를 정의 -> Sequelize.Model 상속
+class User extends Sequelize.Model {
+    // initate 메서드 정의 -> Sequelize 인스턴스를 받아 모델을 초기화, 테이블에 대한 설정
+    static intiate(sequelize) {
+        // 모델의 스키마 정의
+        User.init({
+            // 테이블 칼럼 설정
+            // 시퀄라이즈는 자동의로 id를 기본키로 연결 -> 나머지 칼럼의 스펙만 입력
+            // PostgreSQL 테이블과 컬럼 내용이 일치해야 정확하게 대응됨.
+            name: {
+                type: sequelize.STRING(20), // 문자열 타입, 최대길이 20
+                allowNull: false, // null 허용하지 않음.
+                unique: true, // 종복 허용하지 않음.
+            },
+            age: { // 나이 속성 정의
+                type: Sequelize.INTEGER, // 정수타입
+                allowNull: false, // null 허용하지 않음.
+                validate: {
+                    min: 0 // 음수가 아닌 값을 강제하는 유효성 검사 추가
+                },
+            },
+            married: { // 결혼 여부 속정 정의
+                type: Sequelize.BOOLEAN, // 부울 타입(ture/false)
+                allowNull: false, // null 허용하지 않음.
+            },
+            comment: { // 코멘트 속정 정의
+                type: Sequelize.TEXT, // 텍스트
+                allowNull: true, // null 허용
+            },
+            created_at: { // 생성 일자 속성 정의
+                type: Sequelize.DATE, // 날짜/시간 타입
+                allowNull: false, // null 허용하지 않음.
+                defaultValue: Sequelize.NOW, // 기본값 -> 현재시간
+            },
+        }, {    
+            // 테이블 옵션
+            sequelize, // static initiate 메서드의 매개변수오하 연결되는 옵션 -> model/index.js에서 연결
+            timestamps: false, // 자동으로 날짜 컬럼을 추가하는 기능 해제
+                                // timestamps 속성이 true -> 시퀄라이즈가 createdAt과 updateAT 컬럼 추가
+            underscored: false, // 카멜 케이스(예시: createdAt) 칼럼.테이블명 사용
+                                // true로 설정 -> 스네이크 케이크(예시: created_at) 칼럼.테이블명 사용
+            modelName: 'User', // 모델이름
+            tableName: 'users', // 실제 데이터베이스 테이블 이름 -> 모델이름이 User인 경우 테이블 이름은 Users
+            paranoid: false, // 소프트 삭제 비활성화
+                            // true로 설정 -> 로우를 삭제할 때 완전히 지워지지 않고 deleteAt에 지운 시각이 기록됨(로우 복원 가능)
+            charset: 'utf8', // 문자 인코딩
+            collate: 'utf8_genercal_cl', // 문자 정렬
+                                        // 한글입력 -> charset: 'utf8', collate: 'utf8_general_cl'로 설정
+                                        // 한글과 이모티콘 입력 -> charset: 'utf8mb4', collate: 'utf8mb4_general_cl로 설정
+        });
+    }
+    // 다른 모델과의 관계정의
+    static associations(db) {
+        db.User.hasMany(db.Comment, { foreignKey: 'commenter', sourceKey: 'id' });
+        // hasMany 메서드 -> User 모델과 Comment 모델간의 일대다 관계 설정(User는 여러개의 Comment를 가질 수 있음.)
+        // foreignKey: 외부키 이름을 지정, 'commenter' -> Comment 모델의 'commenter' 열이 외부키로 사용됨.
+    }
+};
 
-// 설정 파일에서 현재 환경에 해당하는 설정을 가져오기
-const config = require('../config/config.json')[env];
 
-const db = {}; // 데이터 베이스 객체 저장용 빈 객체 생성
-
-// Sequelize 객체 생성 -> PostgreSQL과의 연결을 관리
-// 설정 파일에 가져온 데이터베이스 이름, 사용자 이름, 비밀번호 및 기타 연결 옵션을 사용하여 연결 설정
-const sequelize = new Sequelize(config.database, config.username, config.password, config);
-
-// 데이터베이스 객체에 Sequelize 연결 객체 추가 -> 모델을 정의하고 사용할 때 이 연결 객체를 사용
-db.sequelize = sequelize;
-
-db.User = User; // User 모델을 db 객체에 추가
-db.Comment = Comment; // Comment 모델을 db 객체에 추가
-
-// 모델의 static initiate 메서드 호출 -> 모델,init이 실행되어야 테이블이 모델로 연결됨.
-User.initiate(sequelize); // User 모델을 초기화하고 연결 설정을 전달하여 데이터베이스와 연결
-Comment.initiate(sequelize); // Comment 모델을 초기화하고 연결 설정을 전달하여 데이터베이스와 연결
-
-User.associate(db); // User 모델과 다른 모델 간의 관계 설정
-Comment.associate(db); // Comment 모델과 다른 모델 간의 관계 설정
-
-// 데이터베이스 객체를 내보냄 -> 이 모듈을 다른 파일에서 가져와 데이터베이스 연결을 사용할 수 있음.
-module.exports = db;
+module.exports = User; // User클래스를 외부로 내보냄.

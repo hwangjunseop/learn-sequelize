@@ -14,5 +14,5 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
 db.sequelize = sequelize;
 // 데이터베이스 객체에 Sequelize 연결 객체 추가 -> 모델을 정의하고 사용할때 이 연결 객체를 사용
 
-module.esports = db;
+module.exports = db;
 // 데이터베이스 객체를 내보냄 -> 이 모듈을 다른 파일에서 가져와 데이터 베이스 연결을 사용할수있음.

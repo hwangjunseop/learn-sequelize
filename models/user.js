@@ -3,14 +3,14 @@ const Sequelize = require('sequelize'); // Sequelize 패키지
 // User 클래스를 정의 -> Sequelize.Model 상속
 class User extends Sequelize.Model {
     // initate 메서드 정의 -> Sequelize 인스턴스를 받아 모델을 초기화, 테이블에 대한 설정
-    static intiate(sequelize) {
+    static initiate(sequelize) {
         // 모델의 스키마 정의
         User.init({
             // 테이블 칼럼 설정
             // 시퀄라이즈는 자동의로 id를 기본키로 연결 -> 나머지 칼럼의 스펙만 입력
             // PostgreSQL 테이블과 컬럼 내용이 일치해야 정확하게 대응됨.
             name: {
-                type: sequelize.STRING(20), // 문자열 타입, 최대길이 20
+                type: Sequelize.STRING(20), // 문자열 타입, 최대길이 20
                 allowNull: false, // null 허용하지 않음.
                 unique: true, // 종복 허용하지 않음.
             },
@@ -52,10 +52,11 @@ class User extends Sequelize.Model {
         });
     }
     // 다른 모델과의 관계정의
-    static associations(db) {
+    static associate(db) {
         db.User.hasMany(db.Comment, { foreignKey: 'commenter', sourceKey: 'id' });
         // hasMany 메서드 -> User 모델과 Comment 모델간의 일대다 관계 설정(User는 여러개의 Comment를 가질 수 있음.)
         // foreignKey: 외부키 이름을 지정, 'commenter' -> Comment 모델의 'commenter' 열이 외부키로 사용됨.
+        // sourceKey: 기본 키 이름을 지정, 'id' -> User 모델의 'id' 열이 기본 키로 사용됨.
     }
 };
 
